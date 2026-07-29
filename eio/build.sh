@@ -19,7 +19,7 @@ gcc eio-single.c -W -Wall -shared -o eio-single.so -fPIC  -I. -Wl,-Bsymbolic-fun
 #dg5f — needs the DGSDK installed under /usr/local; skipped (keeping the tracked
 #      eio-dg5f binary) on machines without it
 if [ -d /usr/local/include/DGSDK ]; then
-    gcc -W -Wall -o eio-dg5f eio-dg5f.c -I/usr/local/include/DGSDK -lDGSDK
+    g++ -W -Wall -o eio-dg5f eio-dg5f.c -I/usr/local/include/DGSDK -lDGSDK
 else
     echo "dg5f: DGSDK not found — skipping eio-dg5f build"
 fi

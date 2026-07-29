@@ -109,8 +109,8 @@ int main(int argc, char* argv[]) {
     float zero_array[MAX_JOINT_COUNT] = {0, };
     int dataTypes[MAX_RECEIVED_DATA_TYPE_COUNT] = {1, 2, 3, 4, 0, 0};
 
-    if (htype == 0) gs.model = DG_MODEL_DG_5F_LEFT;
-    else gs.model = DG_MODEL_DG_5F_RIGHT;
+    if (htype == 0) gs.model = DG_MODEL_DG_5F_S_LEFT;
+    else gs.model = DG_MODEL_DG_5F_S_RIGHT;
     
     gs.fingerCount = 5;
     gs.jointCount = 20;
