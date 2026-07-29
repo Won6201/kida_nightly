@@ -43,6 +43,9 @@ dist/
 .codex/
 .claude/
 
+# ── 벤더 SDK (Tesollo DG-5F-S: 라이브러리/헤더/매뉴얼 PDF, 독점 자료라 미추적) ──
+eio/dg5fs_sdk/
+
 # ── OS / 에디터 잡파일 ──
 .DS_Store
 *.swp
