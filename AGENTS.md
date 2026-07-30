@@ -37,10 +37,11 @@ Dual-arm:
 Single arm (one side at a time):
 ```bash
 ./single-run -t 0 -g 0                       # left arm + H9 hand, sim
-./single-run -t 1 -g 1 -x                    # right arm + DG-5 hand, real
+./single-run -t 0 -g 1 -s                    # left arm + DG-5F-S hand, sim
+./single-run -t 1 -g 1 -x                    # right arm + DG-5F-M hand, real
 ```
 
-Flags shared by both runners: `-x` real hardware (loads `eio/eio-*.so`), `-b` actuator built-in position controller, `-v` verbose, `-g 0|1` gripper (h9|dg5f). `kida-run` also has `-m` (MuJoCo, currently commented out) and `-s` (DG-5F-S instead of DG-5F-M; `-g 1` only — it swaps in `yaml/dg5f-s-*` **and** the matching TCP mount offsets, since the S has shorter links and a different palm origin). `single-run` requires `-t 0|1` for left/right and has no `-s` yet.
+Flags shared by both runners: `-x` real hardware (loads `eio/eio-*.so`), `-b` actuator built-in position controller, `-v` verbose, `-g 0|1` gripper (h9|dg5f). Both also take `-s` (DG-5F-S instead of DG-5F-M; `-g 1` only — it swaps in `yaml/dg5f-s-*` **and** the matching TCP mount offsets, since the S has shorter links and a different palm origin). `kida-run` also has `-m` (MuJoCo, currently commented out). `single-run` requires `-t 0|1` for left/right.
 
 The runners pin to CPU 0 (`sched_setaffinity({0})`); the C side pins arm threads to cores 1 and 2.
 
