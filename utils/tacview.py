@@ -23,11 +23,11 @@ PALETTE = [
     (255, 255, 255),
 ]
 
-FINGERS = ["thumb", "index", "middle", "ring", "little"]
-# Direct run, single-run ("hand."), and kida-run left hand ("hand1."). Only
-# sockets that actually deliver frames get drawn, so over-subscribing is free;
-# pass --prefix hand2. for the right hand or --names for an explicit set.
-DEFAULT_PREFIXES = ["", "hand.", "hand1."]
+DEFAULT_NAMES = [
+    "index_fingertip_taxel",
+    "hand.index_fingertip_taxel",
+    "hand1.index_fingertip_taxel",
+]
 
 
 def bg(rgb):
@@ -56,13 +56,12 @@ def parse_shape(s):
 
 
 def grid_lines(name, values, rows, cols, vmax):
-    # YAML sample order is the DG-5F-S datasheet numbering: row-major, 3 per
-    # row, row 1 distal -> row 6 proximal. So the payload reshapes straight
-    # into the physical layout, no transpose.
-    a = values.reshape(rows, cols)
+    # YAML sample order is z-major rows with x along columns. For the fingertip
+    # viewer, show x-major rows instead: first row is the most distal taxels.
+    a = values.reshape(rows, cols).T
     lines = [
         f"{name}",
-        f"  rows: distal -> proximal   cols: taxel 1,2,3 order",
+        f"  rows: distal -> proximal   cols: +z -> -z",
         f"  sum={a.sum():8.3f}  max={a.max():8.3f}  nonzero={(a > 1e-6).sum():2d}",
     ]
     for row in a:
@@ -75,24 +74,19 @@ def grid_lines(name, values, rows, cols, vmax):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Live terminal heatmap for KIDA DG5F-S fingertip tactile sensors.")
+    ap = argparse.ArgumentParser(description="Live terminal heatmap for KIDA DG5F fingertip tactile sensor.")
     ap.add_argument(
         "--names",
         nargs="+",
-        default=None,
-        help="tactile IPC names to subscribe; default is --prefix x --fingers",
+        default=DEFAULT_NAMES,
+        help="tactile IPC names to subscribe; defaults cover direct, single-run, and kida-run left hand",
     )
-    ap.add_argument("--prefix", nargs="+", default=DEFAULT_PREFIXES,
-                    help='socket name prefixes, e.g. hand1. hand2. (default: "" hand. hand1.)')
-    ap.add_argument("--fingers", nargs="+", default=FINGERS, help="fingers to subscribe")
-    ap.add_argument("--shape", default="6x3", help="array shape, e.g. 6x3 for DG-5F-S")
+    ap.add_argument("--shape", default="4x4", help="array shape, e.g. 4x4")
     ap.add_argument("--hz", type=float, default=20.0, help="terminal refresh rate")
     ap.add_argument("--max", dest="vmax", type=float, default=0.0,
                     help="fixed color max; 0 means auto-scale from current frame")
     ap.add_argument("--timeout", type=float, default=2.0, help="seconds before showing stale data")
     args = ap.parse_args()
-    if args.names is None:
-        args.names = [f"{p}{f}_fingertip_taxel" for p in args.prefix for f in args.fingers]
 
     rows, cols = parse_shape(args.shape)
     ntaxel = rows * cols
@@ -135,15 +129,13 @@ def main():
             next_draw = now + period
 
             active = [name for name in args.names if now - stamp[name] <= args.timeout]
-            # Nothing live yet: show one placeholder rather than every subscribed
-            # socket, since the default fans out over prefixes x fingers.
-            shown = active if active else args.names[:1]
+            shown = active if active else args.names
             frame_max = max(float(data[name].max()) for name in shown)
             vmax = args.vmax if args.vmax > 0 else max(frame_max, 1e-6)
 
             lines = [
-                "KIDA DG5F-S fingertip tactile viewer  (Ctrl-C to exit)",
-                f"sockets: {len(active)} live / {len(args.names)} subscribed",
+                "KIDA DG5F index fingertip tactile viewer  (Ctrl-C to exit)",
+                f"sockets: {', '.join(args.names)}",
                 f"shape: {rows}x{cols}   color max: {vmax:.3f}   payload: float32 ({ntaxel},1)",
                 "",
             ]

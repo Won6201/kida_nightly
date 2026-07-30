@@ -12,8 +12,11 @@ import yaml
 import zmq
 from matplotlib import colors
 
-NROW, NCOL = 6, 3          # DG-5F-S: 18 taxels, row 1 distal -> row 6 proximal
-DEFAULT_PREFIXES = ["", "hand.", "hand1."]
+DEFAULT_NAMES = [
+    "index_fingertip_taxel",
+    "hand.index_fingertip_taxel",
+    "hand1.index_fingertip_taxel",
+]
 
 
 def load_taxel_spec(yml_path, sensor_name):
@@ -34,10 +37,7 @@ def load_taxel_spec(yml_path, sensor_name):
     samples = np.asarray(spec["samples"], dtype=float)
     radius, hh = map(float, shape["param"])
     center = np.asarray(shape.get("pos", [0.0, 0.0, 0.0]), dtype=float)
-    # `pos` is the capsule midpoint on a capsule rooted at the joint origin, so
-    # it also gives the link axis. The thumb runs along y, the fingers along x.
-    axis = center / np.linalg.norm(center)
-    return spec, samples, center, axis, radius, hh
+    return spec, samples, center, radius, hh
 
 
 def connect(names):
@@ -54,64 +54,53 @@ def connect(names):
     return poller, socks
 
 
-def capsule_wire(ax, center, axis, radius, hh):
-    """Wireframe capsule of half-length hh about `axis`, centred on `center`."""
-    # Orthonormal frame with e0 along the link axis.
-    e0 = axis / np.linalg.norm(axis)
-    tmp = np.array([1.0, 0.0, 0.0]) if abs(e0[0]) < 0.9 else np.array([0.0, 1.0, 0.0])
-    e1 = np.cross(e0, tmp); e1 /= np.linalg.norm(e1)
-    e2 = np.cross(e0, e1)
+def capsule_wire(ax, center, radius, hh):
+    cx = float(center[0])
+    distal = cx - hh
+    proximal = cx + hh
     theta = np.linspace(0.0, 2.0 * np.pi, 97)
 
-    def draw(pts, color):
-        pts = np.asarray(pts)
-        ax.plot(pts[:, 0], pts[:, 1], pts[:, 2], color=color, linewidth=0.8)
+    for x in np.linspace(distal, proximal, 4):
+        ax.plot([x] * len(theta), radius * np.cos(theta), radius * np.sin(theta),
+                color="0.75", linewidth=0.8)
+    for a in [0.0, np.pi / 2.0, np.pi, 3.0 * np.pi / 2.0]:
+        ax.plot([distal, proximal], [radius * np.cos(a)] * 2,
+                [radius * np.sin(a)] * 2, color="0.75", linewidth=0.8)
 
-    for a in np.linspace(-hh, hh, 4):                       # rings along the barrel
-        draw([center + e0 * a + radius * (np.cos(t) * e1 + np.sin(t) * e2)
-              for t in theta], "0.75")
-    for t in [0.0, np.pi / 2.0, np.pi, 1.5 * np.pi]:        # barrel generators
-        r = radius * (np.cos(t) * e1 + np.sin(t) * e2)
-        draw([center - e0 * hh + r, center + e0 * hh + r], "0.75")
-
-    for side in (-1.0, 1.0):                                # end caps
-        cap = center + e0 * (side * hh)
+    for side, center_x in [(-1.0, distal), (1.0, proximal)]:
         for phi in [np.pi / 6.0, np.pi / 3.0]:
+            dx = side * radius * np.sin(phi)
             rr = radius * np.cos(phi)
-            draw([cap + e0 * (side * radius * np.sin(phi))
-                  + rr * (np.cos(t) * e1 + np.sin(t) * e2) for t in theta], "0.72")
-        for t in [0.0, np.pi / 2.0, np.pi, 1.5 * np.pi]:
-            r = np.cos(t) * e1 + np.sin(t) * e2
-            draw([cap + e0 * (side * radius * np.sin(p)) + radius * np.cos(p) * r
-                  for p in np.linspace(0.0, np.pi / 2.0, 40)], "0.72")
+            ax.plot([center_x + dx] * len(theta), rr * np.cos(theta),
+                    rr * np.sin(theta), color="0.72", linewidth=0.8)
+        for a in [0.0, np.pi / 2.0, np.pi, 3.0 * np.pi / 2.0]:
+            phi = np.linspace(0.0, np.pi / 2.0, 40)
+            ax.plot(center_x + side * radius * np.sin(phi),
+                    radius * np.cos(phi) * np.cos(a),
+                    radius * np.cos(phi) * np.sin(a),
+                    color="0.72", linewidth=0.8)
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Live matplotlib view for one KIDA DG5F-S fingertip tactile pad.")
-    ap.add_argument("--names", nargs="+", default=None,
-                    help="tactile IPC names to subscribe; default is --prefix x --finger")
-    ap.add_argument("--prefix", nargs="+", default=DEFAULT_PREFIXES,
-                    help='socket name prefixes, e.g. hand1. hand2.')
-    ap.add_argument("--finger", default="index",
-                    choices=["thumb", "index", "middle", "ring", "little"],
-                    help="which fingertip pad to plot")
-    ap.add_argument("--yml", default=str(Path(__file__).resolve().parent.parent / "yaml" / "dg5f-s-left.yaml"),
+    ap = argparse.ArgumentParser(description="Live matplotlib view for KIDA DG5F fingertip tactile sensor.")
+    ap.add_argument("--names", nargs="+", default=DEFAULT_NAMES,
+                    help="tactile IPC names to subscribe")
+    ap.add_argument("--yml", default=str(Path(__file__).resolve().parent.parent / "yaml" / "dg5f-left.yaml"),
                     help="YAML file containing the unprefixed tactile geometry")
+    ap.add_argument("--sensor", default="index_fingertip_taxel",
+                    help="unprefixed tactile sensor name in --yml")
     ap.add_argument("--max", dest="vmax", type=float, default=0.0,
                     help="fixed color max; 0 means auto-scale")
     ap.add_argument("--hz", type=float, default=20.0, help="plot refresh rate")
     ap.add_argument("--timeout", type=float, default=2.0, help="seconds before showing stale title")
     args = ap.parse_args()
-    sensor = f"{args.finger}_fingertip_taxel"
-    if args.names is None:
-        args.names = [p + sensor for p in args.prefix]
 
-    spec, samples, center, axis, radius, hh = load_taxel_spec(args.yml, sensor)
+    spec, samples, center, radius, hh = load_taxel_spec(args.yml, args.sensor)
     pos = samples[:, 0:3]
     normal = samples[:, 3:6]
     ntaxel = pos.shape[0]
-    if ntaxel != NROW * NCOL:
-        raise SystemExit(f"expected {NROW * NCOL} taxels, got {ntaxel}")
+    if ntaxel != 16:
+        raise SystemExit(f"expected 16 taxels, got {ntaxel}")
 
     poller, socks = connect(args.names)
     data = {name: np.zeros(ntaxel, dtype=np.float32) for name in args.names}
@@ -124,36 +113,35 @@ def main():
     fig = plt.figure(figsize=(10, 5))
     ax = fig.add_subplot(121, projection="3d")
     ax2 = fig.add_subplot(122)
-    fig.canvas.manager.set_window_title("KIDA DG5F-S tactile plot viewer")
+    fig.canvas.manager.set_window_title("KIDA DG5F tactile plot viewer")
 
-    capsule_wire(ax, center, axis, radius, hh)
+    capsule_wire(ax, center, radius, hh)
     scat = ax.scatter(pos[:, 0], pos[:, 1], pos[:, 2], c=np.zeros(ntaxel),
-                      cmap=cmap, norm=norm, s=60, edgecolor="black", linewidth=0.3)
+                      cmap=cmap, norm=norm, s=75, edgecolor="black", linewidth=0.3)
     ax.quiver(pos[:, 0], pos[:, 1], pos[:, 2],
               normal[:, 0], normal[:, 1], normal[:, 2],
               length=0.004, color="navy", normalize=True)
-    ax.set_title(f"{spec['body']} local frame")
-    ax.set_xlabel("x")
+    ax.set_title("index4 local frame")
+    ax.set_xlabel("x: finger axis")
     ax.set_ylabel("y")
     ax.set_zlabel("z")
-    span = np.abs(axis) * 4.0 + (1.0 - np.abs(axis)) * 2.0
-    ax.set_box_aspect(tuple(span))
+    ax.set_box_aspect((4, 2, 2))
     ax.view_init(elev=22, azim=-55)
 
-    # Payload order is the DG-5F-S datasheet numbering (row-major, 3 per row,
-    # row 1 distal -> row 6 proximal), so it reshapes straight into the layout.
-    img = ax2.imshow(np.zeros((NROW, NCOL)), cmap=cmap, norm=norm,
-                     origin="upper", aspect="equal")
-    ax2.set_title("taxel layout (4.8 x 9.6 mm)")
-    ax2.set_xlabel("columns: taxel 1, 2, 3")
+    # YAML sample order is z-major rows with x along columns. Viewer layout uses
+    # rows as distal -> proximal, matching kida/tacview.py.
+    layout = np.zeros((4, 4), dtype=float)
+    img = ax2.imshow(layout, cmap=cmap, norm=norm, origin="upper", aspect="equal")
+    ax2.set_title("viewer layout")
+    ax2.set_xlabel("columns: +z -> -z")
     ax2.set_ylabel("rows: distal -> proximal")
-    ax2.set_xticks(range(NCOL))
-    ax2.set_yticks(range(NROW))
-    ax2.set_xticklabels(["1", "2", "3"])
-    ax2.set_yticklabels([f"{1 + NCOL * i}" for i in range(NROW)])
-    for i in range(NROW):
-        for j in range(NCOL):
-            ax2.text(j, i, "", ha="center", va="center", color="white", fontsize=8)
+    ax2.set_xticks(range(4))
+    ax2.set_yticks(range(4))
+    ax2.set_xticklabels(["+7.5", "+2.5", "-2.5", "-7.5"])
+    ax2.set_yticklabels(["1 distal", "2", "3", "4 proximal"])
+    for i in range(4):
+        for j in range(4):
+            ax2.text(j, i, "", ha="center", va="center", color="white", fontsize=9)
     texts = ax2.texts
     cb = fig.colorbar(img, ax=[ax, ax2], shrink=0.78, pad=0.04)
     cb.set_label("normal force")
@@ -178,7 +166,7 @@ def main():
         norm.vmax = vmax
 
         scat.set_array(value)
-        layout = value.reshape(NROW, NCOL)
+        layout = value.reshape(4, 4).T
         img.set_data(layout)
         for text, v in zip(texts, layout.reshape(-1)):
             text.set_text(f"{v:.1f}")
