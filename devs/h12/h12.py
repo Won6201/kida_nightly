@@ -59,13 +59,13 @@ class Controller:
             q_d = self.trj1.generate()
             tau = self.pid.update(q_d, q, qd)
 
-        elif self.s == 'joint':
-            if self.t == 0: self.trj1.target(self.v.reshape((1, 12)), [1000], q, self.T)
-            q_d = self.trj1.generate()
-            tau = self.pid.update(q_d, q, qd)
+        #elif self.s == 'joint':
+        #    if self.t == 0: self.trj1.target(self.v.reshape((1, 12)), [1000], q, self.T)
+        #    q_d = self.trj1.generate()
+        #    tau = self.pid.update(q_d, q, qd)
             
         #for data glove streaming
-        elif self.s == 'xmanus':
+        elif self.s == 'joint': #'xmanus':
             tau = self.pid.update(self.v, q, qd)
             
         elif self.s == 'mcheck':
