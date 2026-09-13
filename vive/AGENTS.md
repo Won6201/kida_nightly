@@ -13,7 +13,7 @@ No Make/CMake. This dir's own `build.sh` is standalone. It builds:
 ```
 
 OpenVR is resolved through `OPENVR_LIB_DIR` (default SteamVR path). Manus SDK is
-resolved from `../../ManusSDK/3.0.1` (i.e. `~/ManusSDK/3.0.1`, outside the
+resolved from `../../ManusSDK/3.1.1` (i.e. `~/ManusSDK/3.1.1`, outside the
 repo). Both are baked into rpaths; rebuild after moving dependencies. There are no tests, linter, or formatter config.
 
 ## Run

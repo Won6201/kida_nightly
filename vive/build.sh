@@ -9,7 +9,7 @@
 
 cd "$(dirname "$0")"
 
-MANUS_DIR="../../ManusSDK/3.0.1"
+MANUS_DIR="../../ManusSDK/3.1.1"
 OPENVR_LIB_DIR="${OPENVR_LIB_DIR:-$HOME/.local/share/Steam/steamapps/common/SteamVR/bin/linux64}"
 
 #vive + manus teleop master (zmq PUSH to slave/logger)
