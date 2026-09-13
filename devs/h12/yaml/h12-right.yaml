@@ -31,7 +31,7 @@ bodies:
     shapes: [{type: capsule, pos: [0, -0.0175, 0], euler: [90, 0, 0], param: [0.01, 0.0175], contact: [0, mat1], rgba: [0.3, 0.3, 0.8, 1.0]}]
     
   - name: index1
-    joint: {type: rev, parent: root, pos: [0, 0.036, 0.06], euler: [-93, 0, 0], damping: 0.01}
+    joint: {type: rev, parent: root, pos: [0, 0.036, 0.08], euler: [-93, 0, 0], damping: 0.01}
     inertial: {mass: 0.05, tensor: [sphere, 0.05], pos: [0, -0.03, 0]}
     shapes: [{type: capsule, pos: [0, -0.021, 0], euler: [90, 0, 0], param: [0.01, 0.021], rgba: [0.3, 0.3, 0.8, 1.0]}]
     
@@ -42,7 +42,7 @@ bodies:
     shapes: [{type: capsule, pos: [0, -0.0175, 0], euler: [90, 0, 0], param: [0.01, 0.0175], contact: [0, mat1], rgba: [0.3, 0.3, 0.8, 1.0]}]
     
   - name: middle1
-    joint: {type: rev, parent: root, pos: [0, 0.012, 0.065], euler: [-90, 0, 0], damping: 0.01}
+    joint: {type: rev, parent: root, pos: [0, 0.012, 0.085], euler: [-90, 0, 0], damping: 0.01}
     inertial: {mass: 0.05, tensor: [sphere, 0.05], pos: [0, -0.03, 0]}
     shapes: [{type: capsule, pos: [0, -0.021, 0], euler: [90, 0, 0], param: [0.01, 0.021], rgba: [0.3, 0.3, 0.8, 1.0]}]
     
@@ -53,7 +53,7 @@ bodies:
     shapes: [{type: capsule, pos: [0, -0.0175, 0], euler: [90, 0, 0], param: [0.01, 0.0175], contact: [0, mat1], rgba: [0.3, 0.3, 0.8, 1.0]}]
     
   - name: ring1
-    joint: {type: rev, parent: root, pos: [0, -0.012, 0.06], euler: [-87, 0, 0], damping: 0.01}
+    joint: {type: rev, parent: root, pos: [0, -0.012, 0.08], euler: [-87, 0, 0], damping: 0.01}
     inertial: {mass: 0.05, tensor: [sphere, 0.05], pos: [0, -0.03, 0]}
     shapes: [{type: capsule, pos: [0, -0.021, 0], euler: [90, 0, 0], param: [0.01, 0.021], rgba: [0.3, 0.3, 0.8, 1.0]}]
     
@@ -64,7 +64,7 @@ bodies:
     shapes: [{type: capsule, pos: [0, -0.0175, 0], euler: [90, 0, 0], param: [0.01, 0.0175], contact: [0, mat1], rgba: [0.3, 0.3, 0.8, 1.0]}]
     
   - name: little1
-    joint: {type: rev, parent: root, pos: [0, -0.036, 0.055], euler: [-84, 0, 0], damping: 0.01}
+    joint: {type: rev, parent: root, pos: [0, -0.036, 0.075], euler: [-84, 0, 0], damping: 0.01}
     inertial: {mass: 0.05, tensor: [sphere, 0.05], pos: [0, -0.03, 0]}
     shapes: [{type: capsule, pos: [0, -0.021, 0], euler: [90, 0, 0], param: [0.01, 0.021], rgba: [0.3, 0.3, 0.8, 1.0]}]
     
